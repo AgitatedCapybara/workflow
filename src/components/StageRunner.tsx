@@ -79,6 +79,7 @@ export const StageRunner: React.FC<StageRunnerProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'prompt' | 'input' | 'visualize'>('prompt');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [queryConfirmed, setQueryConfirmed] = useState(false);
   const [localInput, setLocalInput] = useState('');
   const [userQueryInput, setUserQueryInput] = useState(
     'Best portable power station under $700 with pure sine wave for overnight CPAP use'
@@ -94,6 +95,11 @@ export const StageRunner: React.FC<StageRunnerProps> = ({
   const [enforceAsDealbreaker, setEnforceAsDealbreaker] = useState<boolean>(false);
   const [showAcquisitionSettings, setShowAcquisitionSettings] = useState(true);
   const [stage2PromptMode, setStage2PromptMode] = useState<'initial' | 'followup'>('initial');
+
+  // When switching stages, always start at the first tab (Tab 1: Prompt Generator)
+  useEffect(() => {
+    setActiveTab('prompt');
+  }, [activeStage]);
 
   // Sync decision focus to userQueryInput when project changes
   useEffect(() => {
@@ -490,6 +496,8 @@ ${enforceAsDealbreaker ?
                       if (onUpdateProjectName) {
                         onUpdateProjectName('Samsung Galaxy Phone (<$600, Refurbished / Direct / Retail)');
                       }
+                      setQueryConfirmed(true);
+                      setTimeout(() => setQueryConfirmed(false), 3000);
                     }}
                     className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2.5 py-1 text-xs text-neutral-200 hover:border-indigo-500 hover:text-indigo-300 transition-colors flex items-center gap-1.5"
                   >
@@ -511,6 +519,8 @@ ${enforceAsDealbreaker ?
                       if (onUpdateProjectName) {
                         onUpdateProjectName('Portable Power Station for CPAP / Camping ($700 budget)');
                       }
+                      setQueryConfirmed(true);
+                      setTimeout(() => setQueryConfirmed(false), 3000);
                     }}
                     className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2.5 py-1 text-xs text-neutral-200 hover:border-indigo-500 hover:text-indigo-300 transition-colors flex items-center gap-1.5"
                   >
@@ -533,6 +543,8 @@ ${enforceAsDealbreaker ?
                       if (onUpdateProjectName) {
                         onUpdateProjectName('Wireless Noise-Canceling Headphones (<$350)');
                       }
+                      setQueryConfirmed(true);
+                      setTimeout(() => setQueryConfirmed(false), 3000);
                     }}
                     className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2.5 py-1 text-xs text-neutral-200 hover:border-indigo-500 hover:text-indigo-300 transition-colors flex items-center gap-1.5"
                   >
@@ -541,15 +553,24 @@ ${enforceAsDealbreaker ?
                   </button>
                 </div>
 
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">
-                  Decision Focus & User Query
-                </label>
-                <div className="flex gap-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                    Decision Focus &amp; User Query
+                  </label>
+                  {queryConfirmed && (
+                    <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 animate-pulse">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Confirmed &amp; Directive Updated
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={userQueryInput}
                     onChange={(e) => {
                       setUserQueryInput(e.target.value);
+                      setQueryConfirmed(false);
                       if (onUpdateProjectName && (project.name === 'Untitled Decision Research' || project.name.includes('CPAP') || project.name.includes('Samsung'))) {
                         const trimmed = e.target.value.trim();
                         if (trimmed) {
@@ -557,12 +578,55 @@ ${enforceAsDealbreaker ?
                         }
                       }
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const trimmed = userQueryInput.trim();
+                        if (trimmed) {
+                          if (onUpdateProjectName) {
+                            onUpdateProjectName(trimmed.length > 55 ? trimmed.slice(0, 52) + '...' : trimmed);
+                          }
+                          setQueryConfirmed(true);
+                          setTimeout(() => setQueryConfirmed(false), 3000);
+                        }
+                      }
+                    }}
                     placeholder="e.g. Best noise canceling headphones under $300..."
                     className="flex-1 rounded-lg border border-neutral-700 bg-neutral-950 px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-500 focus:border-indigo-500 focus:outline-hidden"
                   />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = userQueryInput.trim();
+                      if (trimmed) {
+                        if (onUpdateProjectName) {
+                          onUpdateProjectName(trimmed.length > 55 ? trimmed.slice(0, 52) + '...' : trimmed);
+                        }
+                        setQueryConfirmed(true);
+                        setTimeout(() => setQueryConfirmed(false), 3000);
+                      }
+                    }}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold transition-all shrink-0 ${
+                      queryConfirmed
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20'
+                    }`}
+                  >
+                    {queryConfirmed ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Confirmed!</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Confirm Query</span>
+                      </>
+                    )}
+                  </button>
                 </div>
                 <p className="mt-1 text-[11px] text-neutral-500">
-                  Type your real-world product or architectural choice. Stage 1 will auto-classify risk, define weights, and set dealbreakers.
+                  Type your real-world product or architectural choice, then click <strong>Confirm Query</strong> (or press Enter). The Stage 1 directive below will instantly update.
                 </p>
               </div>
 
