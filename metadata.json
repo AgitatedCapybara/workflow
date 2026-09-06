@@ -1,0 +1,6 @@
+{
+  "name": "v36 Pipeline Studio",
+  "description": "Interactive operator cockpit, prompt builder, stage-gate validator, and file hub for the v36.0 Enterprise Decision Research Pipeline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
