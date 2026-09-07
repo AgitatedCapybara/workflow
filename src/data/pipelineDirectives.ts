@@ -51,14 +51,14 @@ export const STAGE_META_INFO: Record<string, StageMeta> = {
   },
   stage4: {
     stageId: 'stage4',
-    title: 'MCDA Scoring & Red-Team Stress Test',
+    title: 'MCDA Scoring & Stress-Test Analysis',
     model: 'Claude Sonnet 5',
     effort: 'effort: max (thinking budget: max)',
     targetFile: 'stage4_directive_log.json',
     inputRequired: 'stage1_framing.json + stage3_audit.json',
     tooling: 'Pure Complex Reasoning',
     estTime: '2 - 4 minutes',
-    description: 'Applies dealbreaker gates, computes confidence-weighted MCDA scores, runs multi-path consistency tests, and generates steelman and red-team critiques.'
+    description: 'Applies dealbreaker gates, computes confidence-weighted MCDA scores, runs multi-path consistency tests, and generates steelman and stress-test critiques.'
   },
   stage5: {
     stageId: 'stage5',
@@ -69,6 +69,6 @@ export const STAGE_META_INFO: Record<string, StageMeta> = {
     inputRequired: 'stage4_directive_log.json ONLY',
     tooling: 'Context-Isolated Synthesis',
     estTime: '< 30 seconds',
-    description: 'Synthesizes locked scores and red-team disclosures into an executive-ready decision report in markdown.'
+    description: 'Synthesizes locked scores and stress-test disclosures into an executive-ready decision report in markdown.'
   }
 };

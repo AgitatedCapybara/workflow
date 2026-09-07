@@ -288,9 +288,12 @@ def validate_stage5(stage4, report_text):
     errors = []
     warnings = []
     
-    red_team_count = len(stage4.get('red_team_analysis', []))
-    if red_team_count > 0 and "red" not in report_text.lower() and "steelman" not in report_text.lower():
-        warnings.append("Report may be missing mandatory Steelman/Red-Team full disclosure section")
+    stress_test_count = len(stage4.get('stress_test_analysis', []) or stage4.get('red_team_analysis', []))
+    if stress_test_count > 0:
+        report_lower = report_text.lower()
+        has_disclosure = any(k in report_lower for k in ["stress", "steelman", "caveat", "counter", "vulnerability", "downside", "red"])
+        if not has_disclosure:
+            warnings.append("Report may be missing mandatory Steelman/Stress-Test full disclosure section")
         
     return errors, warnings
 

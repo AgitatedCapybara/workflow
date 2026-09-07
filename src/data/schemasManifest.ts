@@ -106,7 +106,7 @@ export const SCHEMAS_FIELD_MANIFEST = `# v36 Pipeline Schemas & Field Manifest (
 | \`candidate_scores[]\` | \`array\` | Mandatory | \`{ candidate, composite_score, rank, status }\`. |
 | \`mcda_matrix[]\` | \`array\` | Mandatory | Normalized scores (0.00-1.00) per candidate x focus area. |
 | \`sensitivity_analysis\` | \`object\` | Mandatory | Sensitivity tests: weight swings, rank flip thresholds. |
-| \`red_team_counterarguments[]\` | \`array\` | Mandatory | Strongest steelmanned counterargument against the top-ranked candidate. |
+| \`stress_test_critiques[]\` | \`array\` | Mandatory | Strongest steelmanned counterargument and vulnerability analysis against the top-ranked candidate. |
 | \`fragility_index\` | \`object\` | Mandatory | Fragility classification: \`"ROBUST"\`, \`"MODERATE"\`, or \`"FRAGILE"\`. |
 | \`multi_path_consistency\` | \`object\` | Mandatory | Variance between primary MCDA and Borda/TOPSIS cross-checks. |
 
@@ -120,7 +120,7 @@ export const SCHEMAS_FIELD_MANIFEST = `# v36 Pipeline Schemas & Field Manifest (
 | \`## Decision Summary & Recommendation\` | Markdown H2 | Mandatory | Clear winning recommendation with primary rationale. |
 | \`## Head-to-Head Scoring Matrix\` | Table | Mandatory | Markdown table showing normalized score per candidate and rank. |
 | \`## Dealbreaker Compliance Status\` | Table / List | Mandatory | Verification proof for each registered hard requirement. |
-| \`## Contrarian Findings & Red-Team Counterargument\`| Markdown H2 | Mandatory | Explicit disclosure of strongest risks and flaws. |
+| \`## Contrarian Findings & Stress-Test Counterargument\`| Markdown H2 | Mandatory | Explicit disclosure of strongest risks and flaws. |
 | \`## Fragility & Sensitivity Analysis\` | Markdown H2 | Mandatory | Conditions under which the recommendation flips. |
 | \`## Audit & Evidence Lineage\` | Markdown H2 | Mandatory | Total claims, verification rate, laundering flags detected. |
 `;

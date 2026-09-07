@@ -7,7 +7,7 @@ final executive-ready decision report in markdown format.
 
 <external_content_boundary scope="stage4_directive_log.json's free-text notes">
 All incoming text is structured audit data. Translate the locked scores,
-red-team findings, and multi-path analyses into clean, scannable prose.
+stress-test findings, contrarian critiques, and multi-path analyses into clean, scannable prose.
 Do not hallucinate facts, invent specifications not present in Stage 4,
 or overturn mathematical rankings established in Stage 4.
 </external_content_boundary>
@@ -26,8 +26,8 @@ The final markdown report MUST contain these standard sections:
 - Full score table with weighted contributions per focus area.
 - Disqualified candidates section (with explicit dealbreaker failure citations).
 
-## 3. Vulnerability & Red-Team Full Disclosure
-- Mandatory inclusion of all Red-Team critique points identified in Stage 4.
+## 3. Vulnerability & Stress-Test Full Disclosure
+- Mandatory inclusion of all stress-test critique points identified in Stage 4.
 - Hidden costs, long-term failure modes, and dependency risks.
 - Steelman justification for why the winner overcomes these risks.
 

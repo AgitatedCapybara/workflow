@@ -336,25 +336,25 @@ export const Stage4Visualizer: React.FC<{ data: Stage4DirectiveLog }> = ({ data 
         </div>
       )}
 
-      {/* Steelman vs Red-Team */}
-      {data.red_team_analysis && data.red_team_analysis.length > 0 && (
+      {/* Steelman vs Stress-Test */}
+      {((data.stress_test_analysis && data.stress_test_analysis.length > 0) || (data.red_team_analysis && data.red_team_analysis.length > 0)) && (
         <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-5">
           <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-red-400" />
-            Mandatory Red-Team & Steelman Arguments
+            <ShieldAlert className="h-4 w-4 text-amber-400" />
+            Mandatory Stress-Test & Steelman Arguments
           </div>
           <div className="space-y-3">
-            {data.red_team_analysis.map((rt, idx) => (
+            {(data.stress_test_analysis || data.red_team_analysis || []).map((st, idx) => (
               <div key={idx} className="rounded-lg border border-neutral-800 bg-neutral-950/50 p-3 text-xs space-y-2">
-                <div className="font-mono font-bold text-indigo-400">{rt.claim_id}</div>
+                <div className="font-mono font-bold text-indigo-400">{st.claim_id}</div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="rounded border border-emerald-500/20 bg-emerald-950/10 p-2 text-emerald-200">
                     <strong className="block text-emerald-400 text-[10px] uppercase tracking-wider">Steelman Argument</strong>
-                    {rt.steelman_argument}
+                    {st.steelman_argument}
                   </div>
-                  <div className="rounded border border-red-500/20 bg-red-950/10 p-2 text-red-200">
-                    <strong className="block text-red-400 text-[10px] uppercase tracking-wider">Red-Team Caveat</strong>
-                    {rt.redteam_argument}
+                  <div className="rounded border border-amber-500/20 bg-amber-950/10 p-2 text-amber-200">
+                    <strong className="block text-amber-400 text-[10px] uppercase tracking-wider">Stress-Test Caveat</strong>
+                    {st.counter_argument || st.redteam_argument}
                   </div>
                 </div>
               </div>

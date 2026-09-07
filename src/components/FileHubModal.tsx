@@ -37,7 +37,7 @@ export const FileHubModal: React.FC<FileHubModalProps> = ({
     { key: 'stage1_framing', name: 'stage1_framing.json', stage: 'Stage 1', desc: 'Framing, weights, risk thresholds & discovery gate', ext: 'json' },
     { key: 'stage2_claims', name: 'stage2_claims.json', stage: 'Stage 2', desc: 'Deep research evidence grid & completeness manifest', ext: 'json' },
     { key: 'stage3_audit', name: 'stage3_audit.json', stage: 'Stage 3', desc: 'Audited claims (27 fields), tier audit & math consistency', ext: 'json' },
-    { key: 'stage4_directive_log', name: 'stage4_directive_log.json', stage: 'Stage 4', desc: 'MCDA matrix, fragility ratings & red-team arguments', ext: 'json' },
+    { key: 'stage4_directive_log', name: 'stage4_directive_log.json', stage: 'Stage 4', desc: 'MCDA matrix, fragility ratings & stress-test arguments', ext: 'json' },
     { key: 'stage5_report', name: 'stage5_report.md', stage: 'Stage 5', desc: 'Final executive decision report in markdown', ext: 'md' },
     { key: 'schemas_manifest_md', name: 'v36_schemas_field_manifest.md', stage: 'Specification', desc: 'Canonical 5-stage JSON field manifest and contract', ext: 'md' },
     { key: 'validator_py', name: 'v36_stage_gate_validator.py', stage: 'Tooling', desc: 'Automated Python stage-gate CLI validator', ext: 'py' }

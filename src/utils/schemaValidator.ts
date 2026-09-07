@@ -440,14 +440,15 @@ export function validateStage5Report(stage4: any, reportText: string): Validatio
 
   diagnostics.push({ type: 'PASS', stage: 'Stage 5', field: 'length', message: `Report generated with ${reportText.length} characters.` });
 
-  // Check red team presence
-  const redTeamCount = stage4?.red_team_analysis?.length || 0;
-  if (redTeamCount > 0) {
+  // Check stress-test / contrarian critique presence
+  const stressTestCount = stage4?.stress_test_analysis?.length || stage4?.red_team_analysis?.length || 0;
+  if (stressTestCount > 0) {
     const lower = reportText.toLowerCase();
-    if (!lower.includes('red') && !lower.includes('steelman') && !lower.includes('caveat')) {
-      diagnostics.push({ type: 'WARN', stage: 'Stage 5', field: 'red_team_disclosure', message: `Stage 4 produced ${redTeamCount} red-team analyses, but report may lack Steelman/Red-team section.` });
+    const hasDisclosure = ['stress', 'steelman', 'caveat', 'counter', 'vulnerability', 'downside', 'red'].some(k => lower.includes(k));
+    if (!hasDisclosure) {
+      diagnostics.push({ type: 'WARN', stage: 'Stage 5', field: 'stress_test_disclosure', message: `Stage 4 produced ${stressTestCount} stress-test analyses, but report may lack Steelman/Stress-Test section.` });
     } else {
-      diagnostics.push({ type: 'PASS', stage: 'Stage 5', field: 'red_team_disclosure', message: `Mandatory full disclosure confirmed for red-team analysis.` });
+      diagnostics.push({ type: 'PASS', stage: 'Stage 5', field: 'stress_test_disclosure', message: `Mandatory full disclosure confirmed for stress-test / contrarian analysis.` });
     }
   }
 

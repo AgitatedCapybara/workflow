@@ -343,7 +343,7 @@ export const SAMPLE_POWER_STATION: PipelineProjectState = {
     stage4_directive_log: JSON.stringify({
       "stage4_manifest": {
         "pipeline_version": "v36.0-ADAPTIVE-GATED-HYBRID-ENTERPRISE",
-        "stage_origin": "STAGE_4_SCORING_REDTEAM",
+        "stage_origin": "STAGE_4_SCORING_STRESSTEST",
         "precheck_status": "PASSED",
         "precheck_failure_detail": null,
         "gate_status": "CLEAR",
@@ -426,11 +426,11 @@ export const SAMPLE_POWER_STATION: PipelineProjectState = {
         "skipped_reason": null
       },
       "uncorroborated_synthetic_flags": [],
-      "red_team_analysis": [
+      "stress_test_analysis": [
         {
           "claim_id": "CLM-001",
           "steelman_argument": "1056Wh capacity with verified 86% inverter efficiency delivers over 28 hours continuous 30W runtime, the highest energy efficiency in class.",
-          "redteam_argument": "Ultra-fast 58-minute AC charging engages high-speed cooling fans measuring 52dB, which may disrupt light sleepers in a camping tent."
+          "counter_argument": "Ultra-fast 58-minute AC charging engages high-speed cooling fans measuring 52dB, which may disrupt light sleepers in a camping tent."
         }
       ],
       "resolved_evidence_for_synthesis": {
@@ -494,9 +494,9 @@ The winner remains invariant across all priority reclassifications:
 
 ---
 
-### 5. Steelman vs. Red-Team Analysis
+### 5. Steelman vs. Stress-Test Analysis
 * **Steelman Case (Anker C1000):** Highest verified usable capacity under 30W loads, fastest recharge times, and modern LiFePO4 cells make it the ideal reliable power station for sensitive medical devices.
-* **Red-Team Caveat:** Turbo recharge mode cooling fans register up to 52 dB under high load; operators should use standard "Quiet Mode" charging when sleeping inside tents.
+* **Stress-Test Caveat:** Turbo recharge mode cooling fans register up to 52 dB under high load; operators should use standard "Quiet Mode" charging when sleeping inside tents.
 `
   },
   parsedData: {}

@@ -319,7 +319,8 @@ export interface Stage4DirectiveLog {
     skipped_reason: string | null;
   };
   uncorroborated_synthetic_flags: { candidate: string; claim_id: string }[];
-  red_team_analysis: { claim_id: string; steelman_argument: string; redteam_argument: string }[];
+  stress_test_analysis?: { claim_id: string; steelman_argument: string; counter_argument?: string; redteam_argument?: string }[];
+  red_team_analysis?: { claim_id: string; steelman_argument: string; counter_argument?: string; redteam_argument?: string }[];
   resolved_evidence_for_synthesis: Record<string, string>;
   mcda_matrix: McdaMatrix;
 }

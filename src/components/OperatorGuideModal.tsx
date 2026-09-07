@@ -129,7 +129,7 @@ export const OperatorGuideModal: React.FC<{ isOpen: boolean; onClose: () => void
               </div>
               <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-3 space-y-1">
                 <strong className="text-indigo-300 font-semibold">4. Mandatory Full Disclosure</strong>
-                <p className="text-neutral-400 text-[11px]">Guarantees all Red-Team counterarguments and Multi-Path consistency stress-tests reach the final executive report.</p>
+                <p className="text-neutral-400 text-[11px]">Guarantees all stress-test counterarguments and Multi-Path consistency analyses reach the final executive report.</p>
               </div>
             </div>
           </section>

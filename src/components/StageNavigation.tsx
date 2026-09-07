@@ -24,7 +24,7 @@ export const StageNavigation: React.FC<StageNavigationProps> = ({
     { id: 'stage1', label: '1. Framing & Gate', fileKey: 'stage1_framing', model: 'Gemini 3.6 Flash' },
     { id: 'stage2', label: '2. Deep Research', fileKey: 'stage2_claims', model: 'Gemini Deep Research' },
     { id: 'stage3', label: '3. Verification Audit', fileKey: 'stage3_audit', model: 'Claude Sonnet 5 (high)' },
-    { id: 'stage4', label: '4. Scoring & Red-Team', fileKey: 'stage4_directive_log', model: 'Claude Sonnet 5 (max)' },
+    { id: 'stage4', label: '4. Scoring & Stress-Test', fileKey: 'stage4_directive_log', model: 'Claude Sonnet 5 (max)' },
     { id: 'stage5', label: '5. Executive Report', fileKey: 'stage5_report', model: 'Gemini 3.6 Flash' }
   ];
 
