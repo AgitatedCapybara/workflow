@@ -27,6 +27,30 @@ Call 2 Patch 2:
   - 'stage3-4', 'stage4-5', 'stage3-4a', and 'stage4a-4b' dispatch modes
     remain unimplemented. Pre-existing gap, unrelated to Call 2/3, not
     fixed as part of this patch.
+
+Call 3 Patch 1 (Schema Guard & Dealbreaker Serialization Invariant):
+  - Root cause: Call 3 had no pre-flight guard on its own output shape,
+    letting a run drift on preliminary_adjusted_focus_weights (renaming
+    focus_area -> area, adjusted_weight_final -> adjusted_weight,
+    dropping adjusted_weight_raw / was_top_weighted_initially, emitting
+    unverified_rate: null instead of 0.0) and on candidate_eligibility
+    (inventing eligibility_status/"ELIGIBLE_HIGH_CONFIDENCE" instead of
+    the required dealbreaker_status enum). Fixed upstream in
+    src/data/directives/call3.ts via a new <pre_output_schema_guard>.
+  - validate_stage3() gained three checks so this class of drift is also
+    caught client-side if it recurs:
+      1. Dual-key resolution on preliminary_adjusted_focus_weights: reads
+         'adjusted_weight_final', falling back to legacy 'adjusted_weight'
+         for the normalization-sum check, but [WARN]s that the key must
+         be renamed before Call 4 consumes the file.
+      2. unverified_rate: null on any focus-area entry is now a [FAIL] —
+         zero claims must serialize as literal 0.0, never null.
+      3. candidate_eligibility entries missing a valid literal
+         'dealbreaker_status' (NONE_TRIGGERED | VERIFIED_VIOLATION |
+         PENDING_VERIFICATION) are now a [FAIL], since a renamed or
+         invented field is invisible to Call 4's
+         <input_completeness_precheck> and triggers a DATA_LOSS_HALT
+         there rather than a soft degradation.
 """
 
 import sys
@@ -189,6 +213,56 @@ def validate_stage3(stage1, stage2, data):
             f"stage2_claims.json's anomalous_content_log has {len(upstream_log)} entr(ies) but "
             f"stage3_audit.json's stage3_manifest.anomalous_content_note only carries {len(carried)} — "
             f"the signal was dropped between Call 2 and Call 3"
+        )
+
+    # --- Call 3 Patch 1 additions below (Schema Guard & Dealbreaker Serialization Invariant) ---
+
+    # (1) preliminary_adjusted_focus_weights: dual-key resolution + null unverified_rate guard
+    adjusted_weights = data.get('preliminary_adjusted_focus_weights', [])
+    if adjusted_weights:
+        weight_sum = 0.0
+        used_legacy_key = False
+        null_rate_areas = []
+        for item in adjusted_weights:
+            if 'adjusted_weight_final' in item and item.get('adjusted_weight_final') is not None:
+                weight_sum += item.get('adjusted_weight_final', 0) or 0
+            elif item.get('adjusted_weight') is not None:
+                weight_sum += item.get('adjusted_weight', 0) or 0
+                used_legacy_key = True
+            else:
+                weight_sum += item.get('weight', 0) or 0
+
+            if item.get('unverified_rate') is None:
+                null_rate_areas.append(item.get('focus_area', 'unnamed'))
+
+        if used_legacy_key:
+            warnings.append(
+                "preliminary_adjusted_focus_weights: one or more entries use legacy key "
+                "'adjusted_weight' instead of v36's 'adjusted_weight_final' — rename before "
+                "this file is fed to Call 4, whose parser queries 'adjusted_weight_final' literally"
+            )
+
+        if null_rate_areas:
+            errors.append(
+                f"preliminary_adjusted_focus_weights: unverified_rate is null for focus area(s) "
+                f"{sorted(set(null_rate_areas))} — zero total claims must serialize as literal 0.0, "
+                f"never null; a null value corrupts the Adjusted Weight calculation downstream"
+            )
+
+    # (2) candidate_eligibility: dealbreaker_status must be present and a valid v36 enum value
+    valid_dealbreaker_statuses = {'NONE_TRIGGERED', 'VERIFIED_VIOLATION', 'PENDING_VERIFICATION'}
+    invalid_eligibility = [
+        c.get('candidate', 'unnamed')
+        for c in data.get('candidate_eligibility', [])
+        if c.get('dealbreaker_status') not in valid_dealbreaker_statuses
+    ]
+    if invalid_eligibility:
+        errors.append(
+            f"candidate_eligibility: candidate(s) {invalid_eligibility} lack a valid literal "
+            f"'dealbreaker_status' (NONE_TRIGGERED | VERIFIED_VIOLATION | PENDING_VERIFICATION). "
+            f"Call 4's <input_completeness_precheck> requires this exact field name and enum — a "
+            f"renamed field like 'eligibility_status' is invisible to it and triggers a "
+            f"DATA_LOSS_HALT at Call 4, not a soft degradation"
         )
 
     return errors, warnings

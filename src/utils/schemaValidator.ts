@@ -7,6 +7,17 @@ import {
   ValidationSummary
 } from '../types';
 
+// Call 3 Patch 1 (Schema Guard & Dealbreaker Serialization Invariant):
+// validateStage3Audit() below is resilient to the schema-drift defect
+// fixed upstream in src/data/directives/call3.ts — it (a) accepts a
+// legacy 'adjusted_weight' key as a fallback for 'adjusted_weight_final'
+// but WARNs so the operator renames it before Call 4 consumes it, (b)
+// FAILs when candidate_eligibility entries lack a valid literal
+// 'dealbreaker_status' (a renamed/invented field halts Call 4's
+// <input_completeness_precheck>), and (c) FAILs on a null
+// unverified_rate, which must serialize as 0.0 for zero-claim focus
+// areas.
+
 export function validateStage1Framing(data: any): ValidationDiagnostic[] {
   const diagnostics: ValidationDiagnostic[] = [];
 
@@ -275,11 +286,84 @@ export function validateStage3Audit(stage1: any, stage2: any, data: any): Valida
 
   // 2. Preliminary weight-shift check
   if (Array.isArray(data.preliminary_adjusted_focus_weights)) {
-    const sumFinal = data.preliminary_adjusted_focus_weights.reduce((sum: number, item: any) => sum + (Number(item.adjusted_weight_final) || 0), 0);
+    let usedAlternateField = false;
+    const sumFinal = data.preliminary_adjusted_focus_weights.reduce((sum: number, item: any) => {
+      const val = item.adjusted_weight_final !== undefined ? item.adjusted_weight_final : (item.adjusted_weight !== undefined ? item.adjusted_weight : item.weight);
+      if (item.adjusted_weight_final === undefined && item.adjusted_weight !== undefined) {
+        usedAlternateField = true;
+      }
+      return sum + (Number(val) || 0);
+    }, 0);
+
     if (Math.abs(sumFinal - 1.0) > 0.002) {
-      diagnostics.push({ type: 'FAIL', stage: 'Stage 3', field: 'preliminary_adjusted_focus_weights', message: `Adjusted weights sum to ${sumFinal.toFixed(4)}, failed exact normalization test (|sum - 1.0| > 0.001).` });
+      diagnostics.push({
+        type: 'FAIL',
+        stage: 'Stage 3',
+        field: 'preliminary_adjusted_focus_weights',
+        message: `Adjusted weights sum to ${sumFinal.toFixed(4)}, failed exact normalization test (|sum - 1.0| > 0.001).`
+      });
+    } else if (usedAlternateField) {
+      diagnostics.push({
+        type: 'WARN',
+        stage: 'Stage 3',
+        field: 'preliminary_adjusted_focus_weights',
+        message: `Weights sum to ${sumFinal.toFixed(4)} (passed normalization), but entries use 'adjusted_weight' instead of the v36 schema field name 'adjusted_weight_final'. Update the key to 'adjusted_weight_final' so Call 4 consumes it without error.`
+      });
     } else {
-      diagnostics.push({ type: 'PASS', stage: 'Stage 3', field: 'preliminary_adjusted_focus_weights', message: `Preliminary weight-shift exact normalization passed (sum = ${sumFinal.toFixed(4)}).` });
+      diagnostics.push({
+        type: 'PASS',
+        stage: 'Stage 3',
+        field: 'preliminary_adjusted_focus_weights',
+        message: `Preliminary weight-shift exact normalization passed (sum = ${sumFinal.toFixed(4)}).`
+      });
+    }
+
+    // Call 3 Patch 1: unverified_rate must be a literal 0.0 for zero-claim
+    // focus areas, never null. A null here silently corrupts the weight-shift
+    // formula downstream (Unverified Rate feeds Adjusted Weight directly).
+    const nullRateAreas = data.preliminary_adjusted_focus_weights
+      .filter((item: any) => item.unverified_rate === null)
+      .map((item: any) => item.focus_area || 'unnamed');
+    if (nullRateAreas.length > 0) {
+      diagnostics.push({
+        type: 'FAIL',
+        stage: 'Stage 3',
+        field: 'preliminary_adjusted_focus_weights.unverified_rate',
+        message: `unverified_rate is null for focus area(s): ${nullRateAreas.join(', ')}. Zero total claims must serialize as literal 0.0, not null — a null value is schema non-compliant and will corrupt the Adjusted Weight calculation.`
+      });
+    } else {
+      diagnostics.push({
+        type: 'PASS',
+        stage: 'Stage 3',
+        field: 'preliminary_adjusted_focus_weights.unverified_rate',
+        message: `All ${data.preliminary_adjusted_focus_weights.length} focus area(s) carry a numeric unverified_rate (no null values).`
+      });
+    }
+  }
+
+  // 2b. Candidate Eligibility Schema Check (Required by Call 4 Step 1 Precheck)
+  if (Array.isArray(data.candidate_eligibility)) {
+    const validStatuses = ['NONE_TRIGGERED', 'VERIFIED_VIOLATION', 'PENDING_VERIFICATION'];
+    let invalidStatusCount = 0;
+    for (const item of data.candidate_eligibility) {
+      if (!item.dealbreaker_status || !validStatuses.includes(item.dealbreaker_status)) {
+        invalidStatusCount++;
+      }
+    }
+    if (invalidStatusCount > 0) {
+      diagnostics.push({
+        type: 'FAIL',
+        stage: 'Stage 3',
+        field: 'candidate_eligibility',
+        message: `${invalidStatusCount} candidate(s) lack valid 'dealbreaker_status' ('NONE_TRIGGERED' | 'VERIFIED_VIOLATION' | 'PENDING_VERIFICATION'). Call 4's <input_completeness_precheck> requires the literal field 'dealbreaker_status' — a renamed field like 'eligibility_status' (e.g. 'ELIGIBLE_HIGH_CONFIDENCE') is invisible to it and will trigger a DATA_LOSS_HALT at Call 4, not a soft degradation.`
+      });
+    } else {
+      diagnostics.push({
+        type: 'PASS',
+        stage: 'Stage 3',
+        field: 'candidate_eligibility',
+        message: `All ${data.candidate_eligibility.length} candidate eligibility entries carry valid v36 dealbreaker_status.`
+      });
     }
   }
 

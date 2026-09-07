@@ -1,3 +1,29 @@
+// Call 3 Patch 1 (Schema Guard & Dealbreaker Serialization Invariant)
+// -----------------------------------------------------------------
+// Root cause: Call 3 had no explicit pre-flight check on its own output
+// shape, which allowed a run to drift from the v36 schema on the way
+// out — renaming preliminary_adjusted_focus_weights keys
+// (focus_area -> area, adjusted_weight_final -> adjusted_weight),
+// emitting unverified_rate: null instead of 0.0 for zero-claim focus
+// areas, dropping adjusted_weight_raw / was_top_weighted_initially, and
+// inventing candidate_eligibility.eligibility_status /
+// "ELIGIBLE_HIGH_CONFIDENCE" instead of the required dealbreaker_status
+// enum. Any of these silently breaks Call 4, whose
+// <input_completeness_precheck> depends on the literal field names and
+// enum values below.
+//
+// Fix: added a <pre_output_schema_guard> block (see directive text,
+// immediately before OUTPUT SCHEMA) that makes both invariants
+// explicit and lists the specific wrong names/values to avoid, plus
+// expanded OUTPUT SCHEMA's example JSON for preliminary_adjusted_focus_weights
+// and candidate_eligibility from a collapsed "[ ... ]" placeholder into
+// a fully populated array shape, since a compressed example was part of
+// how the drift went unnoticed.
+//
+// Paired changes: src/utils/schemaValidator.ts (validateStage3Audit) and
+// src/data/validatorScript.ts (validate_stage3()) were updated in the
+// same patch to detect this drift client-side even if it recurs, per
+// Call 3 Patch 1 verification requirements.
 export const CALL3_SYSTEM_DIRECTIVE = `<SYSTEM_DIRECTIVE id="CALL_3_VERIFICATION_AUDIT">
 
 You are Stage 3 of a 5-stage pipeline (6-stage if the operator later
@@ -365,6 +391,52 @@ Full detail (all 27 fields) for CRITICAL / HIGH claims.
 Metadata-only (8 fields) for MINOR claims or disqualified candidates.
 </claim_detail_tiering>
 
+<pre_output_schema_guard>
+New in Call 3 Patch 1 — closes a confirmed schema-drift defect: a prior
+run renamed keys and invented enum values on its way out, and nothing
+in this call checked its own output shape before returning it. Before
+you emit anything, re-read what you are about to output against the
+two literal invariants below. This is a mechanical self-check on your
+own JSON, not a re-judgment of the analysis behind it.
+
+Invariant 1 — preliminary_adjusted_focus_weights, per-entry keys:
+  Every entry MUST carry exactly these six keys, spelled exactly this way:
+    focus_area, initial_weight, unverified_rate, adjusted_weight_raw,
+    adjusted_weight_final, was_top_weighted_initially
+  - DO NOT rename \`focus_area\` to \`area\`.
+  - DO NOT shorten \`adjusted_weight_final\` to \`adjusted_weight\` — Call
+    4's parser specifically queries the field named \`adjusted_weight_final\`;
+    a shortened or renamed key is invisible to it, not merely imperfect.
+  - DO NOT drop \`adjusted_weight_raw\` or \`was_top_weighted_initially\` —
+    both are required even when their value is unremarkable (e.g.
+    \`was_top_weighted_initially: false\`).
+  - Zero-claim rule: if a focus area has zero total claims, its
+    \`unverified_rate\` MUST be the literal float \`0.0\` — never \`null\`,
+    never omitted. \`null\` reads downstream as "not computed," not as
+    "zero," and will corrupt the weight-shift math.
+
+Invariant 2 — candidate_eligibility, per-entry keys and enum:
+  Every entry MUST carry \`dealbreaker_status\` as one of exactly these
+  three literal strings:
+    NONE_TRIGGERED | VERIFIED_VIOLATION | PENDING_VERIFICATION
+  - DO NOT invent \`eligibility_status\`, \`ELIGIBLE_HIGH_CONFIDENCE\`,
+    \`PASS\`, or any other synonym — Call 4's
+    \`<input_completeness_precheck>\` looks for the literal field name
+    \`dealbreaker_status\` with one of the three literal values above,
+    and halts execution (DATA_LOSS_HALT) if it isn't found. A
+    semantically-equivalent but differently-named field is the same
+    failure to Call 4 as a missing one.
+  - \`dealbreaker_detail\` MUST be present on every entry, as a string or
+    explicit \`null\` — never omitted.
+
+Before finalizing output: walk every entry in both arrays against the
+two invariants above. If you catch yourself about to write \`area\`,
+\`adjusted_weight\`, \`eligibility_status\`, \`ELIGIBLE_HIGH_CONFIDENCE\`,
+\`PASS\`, or a \`null\` \`unverified_rate\` for a zero-claim area, that is
+the defect this guard exists to catch — correct it before emitting,
+not after.
+</pre_output_schema_guard>
+
 OUTPUT SCHEMA:
 {
   "stage3_manifest": {
@@ -382,7 +454,22 @@ OUTPUT SCHEMA:
   },
   "audited_claims": [ ... ],
   "coverage_gaps": [ ... ],
-  "candidate_eligibility": [ ... ],
-  "preliminary_adjusted_focus_weights": [ ... ]
+  "candidate_eligibility": [
+    {
+      "candidate": "string",
+      "dealbreaker_status": "NONE_TRIGGERED | VERIFIED_VIOLATION | PENDING_VERIFICATION",
+      "dealbreaker_detail": "string or null"
+    }
+  ],
+  "preliminary_adjusted_focus_weights": [
+    {
+      "focus_area": "string",
+      "initial_weight": 0.0,
+      "unverified_rate": 0.0,
+      "adjusted_weight_raw": 0.0,
+      "adjusted_weight_final": 0.0,
+      "was_top_weighted_initially": true
+    }
+  ]
 }
 </SYSTEM_DIRECTIVE>`;
